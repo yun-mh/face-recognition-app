@@ -1,14 +1,16 @@
-         ___        ______     ____ _                 _  ___  
-        / \ \      / / ___|   / ___| | ___  _   _  __| |/ _ \ 
-       / _ \ \ /\ / /\___ \  | |   | |/ _ \| | | |/ _` | (_) |
-      / ___ \ V  V /  ___) | | |___| | (_) | |_| | (_| |\__, |
-     /_/   \_\_/\_/  |____/   \____|_|\___/ \__,_|\__,_|  /_/ 
+# 表情解析システム
+# Face Recognition App with AWS Rekognition and Vue.js
  ----------------------------------------------------------------- 
 
+インターンシップの間(2020/10/20 ~ 2020/10/30)に作成したシステム
+Coded during the internship(10.20.2020 ~ 10.30.2020)
 
-Hi there! Welcome to AWS Cloud9!
+機能
+- 顔＆マスク検知
+- 感情データの視覚化
+- 笑顔時の演出
 
-To get started, create some files, play with the terminal,
-or visit https://docs.aws.amazon.com/console/cloud9/ for our documentation.
-
-Happy coding!
+Feature
+- Face & Mask Detection
+- Visualization for emotional data
+- Visual Effects as detecting a smiley face
