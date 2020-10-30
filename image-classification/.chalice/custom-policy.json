@@ -1,0 +1,35 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "rekognition:DetectFaces",
+                "rekognition:DetectProtectiveEquipment"
+            ],
+            "Resource": [
+                "*"
+            ],
+            "Sid": "1ff38467f71b4fc9b175be18d5baf542"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "translate:TranslateText"
+            ],
+            "Resource": [
+                "*"
+            ],
+            "Sid": "b6f4f7a2ba344da996abe8b840a1356a"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+            ],
+            "Resource": "arn:*:logs:*:*:*"
+        }
+    ]
+}

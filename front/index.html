@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>表情解析アプリケーション</title>
+  <link rel="stylesheet" href="https://unpkg.com/tailwindcss@^1.0/dist/tailwind.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" crossorigin="anonymous" />
+  <style type="text/css">
+    [v-cloak] {
+        display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" v-cloak>
+    <!--ヘッダー-->
+    <div class="fixed w-full bg-white shadow-lg">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6">
+        <div class="flex justify-between items-center border-b-2 border-gray-100 py-5 md:justify-start md:space-x-10">
+          <div class="flex h-auto items-center">
+            <svg class="block" style="fill: gray;" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path d="M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm0-2c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.508 13.941c-1.513 1.195-3.174 1.931-5.507 1.931-2.335 0-3.996-.736-5.509-1.931l-.492.493c1.127 1.72 3.2 3.566 6.001 3.566 2.8 0 4.872-1.846 5.999-3.566l-.492-.493zm-9.008-5.941c-.828 0-1.5.671-1.5 1.5s.672 1.5 1.5 1.5 1.5-.671 1.5-1.5-.672-1.5-1.5-1.5zm9.5 2.002l-.755.506s-.503-.948-1.746-.948c-1.207 0-1.745.948-1.745.948l-.754-.506c.281-.748 1.205-2.002 2.499-2.002 1.295 0 2.218 1.254 2.501 2.002z"/></svg>
+            <span class="ml-3 font-bold text-2xl"><span class="text-green-600">表情</span><span class="text-red-600">解析</span><span class="text-blue-600">アプリケーション</span></span>
+          </div>
+          <div class="hidden md:flex items-center justify-end space-x-8 md:flex-1 lg:w-0">
+            <span class="inline-flex rounded-md shadow-sm">
+              <button 
+                v-bind:disabled="!isVideoSet"
+                v-bind:class="{'bg-red-600 hover:bg-red-500 focus:border-red-700 focus:shadow-outline-red active:bg-red-700': isStarted, 'bg-green-600 hover:bg-green-500 focus:border-green-700 focus:shadow-outline-green active:bg-green-700': !isStarted}"
+                v-on:click="isStarted = !isStarted, isLoading = 'true', controlVideo()"
+                class="cursor-pointer whitespace-no-wrap inline-flex items-center justify-center px-4 py-2 border border-transparent text-base leading-6 font-medium rounded-md text-white focus:outline-none transition ease-in-out duration-150">
+                {{ isStarted ? '終了' : '開始' }}
+              </button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!--キャプチャー用canvas-->
+    <canvas class="invisible" ref="imageCanvas" width="100" height="75" id="imageCanvas" style="object-fit: contain; position: absolute"></canvas>
+    
+    <!--メイン-->
+    <div
+      class="w-full h-screen flex flex-row pt-16"
+      v-bind:class="{'divide-x divide-gray-200': !isLoading && isStarted}"
+    >
+      <!--映像のためのエレメント設定-->
+      <div class="w-3/6">
+        <div 
+          class="flex flex-col h-full justify-center items-center"
+          v-bind:class="{'bg-gradient-to-br from-orange-400 via-red-500 to-pink-500': isStarted && result && result.Smile.Value === true && result.Smile.Confidence >= 90}"
+        >
+          <video ref="video" width="640" height="480" id="video" muted autoplay style="position: relative;"></video>
+          <canvas ref="canvas" width="640" height="480" id="canvas" style="object-fit: contain; position: absolute;"></canvas>
+        </div>
+      </div>
+      
+      <!--性別・年齢・特徴結果-->
+      <div class="w-1/6 h-full">
+        <div v-if="isStarted" class="h-full">
+          <div v-if="!isLoading && result" class="flex h-full justify-center pt-10">
+            <div class="flex flex-col">
+              <!--性別-->
+              <div class="px-6 py-5">
+                <div class="font-bold text-xl mb-2 text-gray-700">性別</div>
+                <div class="flex text-gray-700 text-base items-center">
+                  <span v-if="result.Gender.Value === 'Male'">
+                    <svg style="fill: blue;" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M16 2v2h3.586l-3.972 3.972c-1.54-1.231-3.489-1.972-5.614-1.972-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-2.125-.741-4.074-1.972-5.614l3.972-3.972v3.586h2v-7h-7zm-6 20c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7z"/></svg>
+                  </span>
+                  <span v-else>
+                    <svg style="fill: red;" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M21 9c0-4.97-4.03-9-9-9s-9 4.03-9 9c0 4.632 3.501 8.443 8 8.941v2.059h-3v2h3v2h2v-2h3v-2h-3v-2.059c4.499-.498 8-4.309 8-8.941zm-16 0c0-3.86 3.14-7 7-7s7 3.14 7 7-3.14 7-7 7-7-3.14-7-7z"/></svg>
+                  </span>
+                  <span class="ml-2">{{ result.Gender.Value === "Male" ? "男性" : "女性" }}<span class="ml-2 text-gray-500">{{ parseFloat(result.Gender.Confidence).toFixed(1) }} %</span></span>
+                </div>
+              </div>
+              <!--年齢-->
+              <div class="px-6 py-5">
+                <div class="font-bold text-xl mb-2 text-gray-700">年齢</div>
+                <p class="text-gray-700 text-base">
+                  {{ result.AgeRange.Low }}~{{ result.AgeRange.High }}歳
+                </p>
+              </div>
+              <!--特徴-->
+              <div class="px-6 py-5">
+                <div class="font-bold text-xl mb-2 text-gray-700">特徴</div>
+                <table v-show="isStarted" class="table-auto">
+                  <tbody>
+                    <tr>
+                      <!--眼鏡-->
+                      <td class="border px-4 py-2">
+                        <div 
+                          class="w-12 h-12 mx-auto rounded flex justify-center items-center border border-2 border-gray-400"
+                          v-bind:class="{'border-green-500': result && result.Eyeglasses.Value === true && result.Eyeglasses.Confidence >= 85 }"
+                        >
+                          <i 
+                            class="fas fa-glasses text-2xl text-gray-400"
+                            v-bind:class="{'text-green-500': result && result.Eyeglasses.Value === true && result.Eyeglasses.Confidence >= 85 }"
+                          ></i>
+                        </div>
+                      </td>
+                      <!--サングラス-->
+                      <td class="border px-4 py-2">
+                        <div 
+                          class="w-12 h-12 mx-auto rounded flex justify-center items-center border border-2 border-gray-400"
+                          v-bind:class="{'border-green-500': result && result.Sunglasses.Value === true && result.Sunglasses.Confidence >= 85 }"
+                        >
+                          <svg v-bind:style="[result && result.Sunglasses.Value === true && result.Sunglasses.Confidence >= 85 ? {fill: 'green'} : {fill: 'lightgray'}]" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M17.945 8c-1.139 0-2.377.129-3.395.491-2.283.828-2.791.838-5.102 0-1.016-.362-2.257-.491-3.393-.491-1.971 0-4.17.387-6.055.878v1.789c.848.255 1.068.627 1.203 1.493.381 2.443 1.256 4.84 5.068 4.84 3.037 0 4.051-2.259 4.723-4.345.34-1.06 1.662-1.087 2.008-.015.674 2.089 1.682 4.36 4.725 4.36 3.814 0 4.689-2.397 5.07-4.841.135-.866.355-1.237 1.203-1.493v-1.788c-1.887-.491-4.084-.878-6.055-.878zm-15.472 4.915c-.117-.357-.223-.724-.312-1.101-.352-1.473-.043-1.789.434-2.074.695-.418 1.973-.665 3.295-.732-2.437.554-3.474 1.117-3.417 3.907zm11.75 0c-.117-.357-.223-.724-.312-1.101-.352-1.473-.043-1.789.434-2.074.695-.418 1.973-.665 3.295-.732-2.437.554-3.474 1.117-3.417 3.907z"/></svg>
+                        </div>  
+                      </td>
+                    </tr>
+                    <tr>
+                      <!--口ひげ-->
+                      <td class="border px-4 py-2">
+                        <div 
+                          class="w-12 h-12 mx-auto rounded flex justify-center items-center border border-2 border-gray-400"
+                          v-bind:class="{'border-orange-500': result && result.Mustache.Value === true && result.Mustache.Confidence >= 85 }"
+                        >
+                          <svg v-bind:style="[result && result.Mustache.Value === true && result.Mustache.Confidence >= 85 ? {fill: 'orange'} : {fill: 'lightgray'}]" xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 1280.000000 640.000000" preserveAspectRatio="xMidYMid meet"><g transform="translate(0.000000,640.000000) scale(0.100000,-0.100000)" stroke="none"><path d="M5065 4954 c-277 -32 -403 -60 -615 -136 -197 -71 -456 -222 -660 -384 -176 -140 -451 -430 -770 -809 -395 -470 -612 -682 -853 -831 -222 -138 -443 -221 -717 -271 -141 -25 -421 -23 -556 5 -258 52 -417 140 -480 264 -76 150 -70 337 15 461 61 89 186 167 267 167 85 0 149 -79 180 -222 10 -43 22 -78 27 -78 18 0 0 209 -24 285 -77 248 -256 300 -547 159 -157 -76 -253 -197 -304 -381 -28 -101 -30 -338 -4 -451 112 -501 487 -885 1077 -1105 617 -231 1395 -245 2479 -46 282 52 463 96 695 170 656 210 1291 540 1743 906 115 93 283 261 337 336 22 31 43 56 46 57 3 0 22 -24 43 -54 48 -70 247 -266 366 -361 527 -420 1357 -815 2065 -984 270 -64 747 -143 1055 -175 607 -63 1139 -36 1552 80 709 198 1168 616 1294 1176 26 113 24 350 -4 451 -51 184 -147 305 -304 381 -122 59 -203 80 -293 74 -79 -5 -116 -21 -164 -70 -70 -71 -109 -184 -118 -340 -7 -129 6 -142 31 -30 42 195 136 261 276 196 230 -107 308 -373 179 -615 -89 -167 -382 -272 -759 -273 -353 0 -675 94 -989 289 -221 137 -468 376 -821 795 -536 636 -788 875 -1131 1072 -524 302 -1174 381 -1664 201 -197 -73 -364 -183 -515 -340 l-100 -103 -100 103 c-282 293 -656 441 -1100 435 -58 0 -118 -3 -135 -4z"/></g></svg>
+                        </div>
+                      </td>
+                      <!--顎ひげ-->
+                      <td class="border px-4 py-2">
+                        <div 
+                          class="w-12 h-12 mx-auto rounded flex justify-center items-center border border-2 border-gray-400"
+                          v-bind:class="{'border-orange-500': result && result.Beard.Value === true && result.Beard.Confidence >= 85 }"
+                        >
+                          <svg v-bind:style="[result && result.Beard.Value === true && result.Beard.Confidence >= 85 ? {fill: 'orange'} : {fill: 'lightgray'}]" xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 1280.000000 763.000000" preserveAspectRatio="xMidYMid meet"><g transform="translate(0.000000,763.000000) scale(0.100000,-0.100000)" stroke="none"><path d="M247 7573 c-3 -16 -17 -82 -31 -148 -83 -392 -154 -909 -192 -1395 -22 -271 -25 -962 -6 -1185 60 -694 181 -1179 402 -1615 123 -240 265 -435 441 -605 118 -114 150 -138 499 -380 1295 -897 2200 -1425 3055 -1780 994 -413 1883 -551 2643 -409 352 65 1010 236 1522 394 1521 471 2684 1053 3266 1634 176 176 260 288 349 465 69 138 71 145 200 826 218 1153 322 1854 381 2565 22 261 25 825 6 985 -19 153 -55 326 -87 415 -27 74 -123 255 -131 247 -3 -2 -54 -152 -113 -333 -399 -1207 -703 -1924 -896 -2114 -109 -107 -263 -209 -485 -320 -376 -188 -878 -359 -1233 -420 -217 -37 -185 -47 -510 157 -672 420 -985 567 -1372 646 -157 31 -463 31 -611 -1 -313 -67 -624 -235 -775 -417 l-61 -74 -50 59 c-28 32 -93 98 -146 146 -79 72 -115 96 -206 140 -257 123 -480 169 -811 168 -223 -1 -329 -11 -550 -55 -556 -110 -1209 -383 -1807 -754 l-121 -76 -66 22 c-218 72 -574 270 -936 521 -315 218 -888 657 -937 719 -110 137 -314 867 -498 1778 -22 112 -43 208 -46 213 -3 4 -22 8 -43 8 -34 0 -39 -3 -44 -27z m6873 -3153 c672 -52 1270 -168 1856 -361 l152 -50 -13 -42 c-133 -439 -392 -796 -680 -937 -142 -69 -216 -85 -400 -84 l-160 0 -295 76 c-505 131 -731 168 -1008 168 -252 0 -410 -28 -727 -125 -311 -95 -540 -122 -792 -94 -444 49 -785 298 -992 723 -55 112 -121 281 -121 310 0 7 74 36 178 69 602 193 1284 314 1997 357 183 10 820 4 1005 -10z"/></g></svg>
+                        </div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <!--笑い-->
+                      <td class="border px-4 py-2">
+                        <div 
+                          class="w-12 h-12 mx-auto rounded flex justify-center items-center border border-2 border-gray-400"
+                          v-bind:class="{'border-pink-500': result && result.Smile.Value === true && result.Smile.Confidence >= 85 }"
+                        >
+                          <svg v-bind:style="[result && result.Smile.Value === true && result.Smile.Confidence >= 85 ? {fill: 'pink'} : {fill: 'lightgray'}]" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm0-2c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.508 13.941c-1.513 1.195-3.174 1.931-5.507 1.931-2.335 0-3.996-.736-5.509-1.931l-.492.493c1.127 1.72 3.2 3.566 6.001 3.566 2.8 0 4.872-1.846 5.999-3.566l-.492-.493zm.492-3.939l-.755.506s-.503-.948-1.746-.948c-1.207 0-1.745.948-1.745.948l-.754-.506c.281-.748 1.205-2.002 2.499-2.002 1.295 0 2.218 1.254 2.501 2.002zm-7 0l-.755.506s-.503-.948-1.746-.948c-1.207 0-1.745.948-1.745.948l-.754-.506c.281-.748 1.205-2.002 2.499-2.002 1.295 0 2.218 1.254 2.501 2.002z"/></svg>
+                        </div>
+                      </td>
+                      <!--マスク-->
+                      <td class="border px-4 py-2">
+                        <div 
+                          class="w-12 h-12 mx-auto rounded flex justify-center items-center border border-2 border-gray-400"
+                          v-bind:class="{'border-red-500': result && result.Mask !== false }"
+                        >
+                          <i 
+                            class="fas fa-head-side-mask text-2xl text-gray-400"
+                            v-bind:class="{'text-red-500': result && result.Mask !== false }"
+                          ></i>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!--ローダー-->
+      <div v-if="isStarted && isLoading" class="w-2/6 h-full">
+        <div class="flex h-full items-center justify-start">
+          <div class="flex flex-col justify-center items-center">
+            <i class="fas fa-spinner fa-spin text-blue-300 text-6xl"></i>
+            <span class="mt-3 text-blue-500">認識・解析中…</span>
+          </div>
+        </div>
+      </div>
+      
+      <!--感情結果-->
+      <div v-show="!isLoading" class="w-2/6 flex h-full justify-center pt-10">
+        <div class="w-3/4">
+          <div v-show="isStarted" class="flex flex-col">
+            <!--感情グラフ-->
+            <div v-show="!isLoading && result">
+              <div class="px-6 py-5">
+                <div class="font-bold text-xl mb-2 text-gray-700">感情グラフ</div>
+                <canvas class="mx-auto" id="chart" width="200" height="200"></canvas>
+              </div>
+            </div>
+            
+            <!--感情詳細  -->
+            <div class="px-6 py-5">
+              <div class="font-bold text-xl mb-2 text-gray-700">感情詳細</div>
+              <table v-if="emotions !== ''" class="w-full">
+                <tbody>
+                  <tr>
+                    <td class="pr-4 py-2 w-1/2">
+                      <div class="flex items-center text-gray-900">
+                        <i class="far fa-meh text-4xl text-teal-400"></i>
+                        <span class="ml-2">穏やか</span>
+                        <span class="ml-1 text-sm leading-5 text-gray-500 text-sm">
+                          {{ parseFloat(emotions.calm.Confidence).toFixed(1) }} %
+                        </span>
+                      </div>
+                    </td>
+                    <td class="pr-4 py-2 w-1/2">
+                      <div class="flex items-center text-gray-900">
+                        <i class="far fa-meh text-4xl text-green-400"></i>
+                        <span class="ml-2">幸せ</span>
+                        <span class="ml-1 text-sm leading-5 text-gray-500 text-sm">
+                          {{ parseFloat(emotions.happy.Confidence).toFixed(1) }} %
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="pr-4 py-2 w-1/2">
+                      <div class="flex items-center text-gray-900">
+                        <i class="far fa-surprise text-4xl text-orange-400"></i>
+                        <span class="ml-2">驚き</span>
+                        <span class="ml-1 text-sm leading-5 text-gray-500 text-sm">
+                          {{ parseFloat(emotions.surprised.Confidence).toFixed(1) }} %
+                        </span>
+                      </div>
+                    </td>
+                    <td class="pr-4 py-2 w-1/2">
+                      <div class="flex items-center text-gray-900">
+                        <i class="far fa-sad-tear text-4xl text-blue-400"></i>
+                        <span class="ml-2">悲しさ</span>
+                        <span class="ml-1 text-sm leading-5 text-gray-500 text-sm">
+                          {{ parseFloat(emotions.sad.Confidence).toFixed(1) }} %
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="pr-4 py-2 w-1/2">
+                      <div class="flex items-center text-gray-900">
+                        <i class="far fa-grimace text-4xl text-purple-400"></i>
+                        <span class="ml-2">恐怖</span>
+                        <span class="ml-1 text-sm leading-5 text-gray-500 text-sm">
+                          {{ parseFloat(emotions.fear.Confidence).toFixed(1) }} %
+                        </span>
+                      </div>
+                    </td>
+                    <td class="pr-4 py-2 w-1/2">
+                      <div class="flex items-center text-gray-900">
+                        <i class="far fa-angry text-4xl text-red-400"></i>
+                        <span class="ml-2">怒り</span>
+                        <span class="ml-1 text-sm leading-5 text-gray-500 text-sm">
+                          {{ parseFloat(emotions.angry.Confidence).toFixed(1) }} %
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="pr-4 py-2 w-1/2">
+                      <div class="flex items-center text-gray-900">
+                        <i class="far fa-flushed text-4xl text-pink-400"></i>
+                        <span class="ml-2">混乱</span>
+                        <span class="ml-1 text-sm leading-5 text-gray-500 text-sm">
+                          {{ parseFloat(emotions.confused.Confidence).toFixed(1) }} %
+                        </span>
+                      </div>
+                    </td>
+                    <td class="pr-4 py-2 w-1/2">
+                      <div class="flex items-center text-gray-900">
+                        <i class="far fa-tired text-4xl text-gray-400"></i>
+                        <span class="ml-2">嫌悪</span>
+                        <span class="ml-1 text-sm leading-5 text-gray-500 text-sm">
+                          {{ parseFloat(emotions.disgusted.Confidence).toFixed(1) }} %
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js" integrity="sha512-d9xgZrVZpmmQlfonhQUvTR7lMPtO7NkZMkA0ABN3PHCbKA5nqylQ/yWlFAyY6hYgdF1Qh6nYiuADWwKB4C2WSw==" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/axios@0.18.0/dist/axios.min.js"></script>
+  <script src="./main.js"></script>
+</body>
+</html>
